@@ -1,5 +1,7 @@
 This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
 
+This directory contains the frontend written in Next.js and D3 for tree visualizations.
+
 ## Getting Started
 
 First, run the development server:

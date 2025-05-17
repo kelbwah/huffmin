@@ -14,7 +14,6 @@ import {
   CheckCircle,
   AlertCircle,
 } from "lucide-react";
-import Navbar from "@/components/navbar";
 
 function downloadBlob(blob: Blob, filename: string) {
   const downloadUrl = URL.createObjectURL(blob);
@@ -48,7 +47,6 @@ export default function Home() {
       } else {
         setDecompressedFile(e.target.files[0]);
       }
-      // Reset states
       setSuccess(null);
       setError(null);
     }
@@ -144,8 +142,7 @@ export default function Home() {
               animate={{ opacity: 1 }}
               transition={{ delay: 0.4, duration: 0.5 }}
             >
-              Efficiently compress and decompress your files using Huffman
-              coding algorithm
+              Compress/Decompress your files below.
             </motion.p>
           </div>
 
@@ -164,7 +161,6 @@ export default function Home() {
           </AnimatePresence>
 
           <div className="grid md:grid-cols-2 gap-8 mt-8">
-            {/* Compress Section */}
             <motion.div
               className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
               whileHover={{
@@ -261,7 +257,6 @@ export default function Home() {
               </form>
             </motion.div>
 
-            {/* Decompress Section */}
             <motion.div
               className="bg-white dark:bg-gray-800 p-6 rounded-xl shadow-lg border border-gray-200 dark:border-gray-700"
               whileHover={{

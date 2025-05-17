@@ -7,7 +7,6 @@ import (
 	"testing"
 )
 
-// createTempFile writes content to a temp file and returns its path.
 func createTempFile(t *testing.T, name string, content []byte) string {
 	t.Helper()
 	tmpDir := t.TempDir()
@@ -48,10 +47,8 @@ func TestHuffmanCompressDecompress(t *testing.T) {
 
 	for _, tt := range tests {
 		t.Run(tt.name, func(t *testing.T) {
-			// Create test file
 			path := createTempFile(t, tt.name, tt.content)
 
-			// Compress
 			compressed, err := HuffmanCompress(path)
 
 			if tt.shouldError {
@@ -68,13 +65,11 @@ func TestHuffmanCompressDecompress(t *testing.T) {
 				t.Fatal("compressed output is empty")
 			}
 
-			// Decompress
 			decompressed, err := HuffmanDecompress(compressed)
 			if err != nil {
 				t.Fatalf("unexpected decompress error: %v", err)
 			}
 
-			// Validate round-trip
 			if !bytes.Equal(decompressed, tt.content) {
 				t.Errorf("decompressed output does not match original.\nGot: %v\nWant: %v", decompressed, tt.content)
 			}

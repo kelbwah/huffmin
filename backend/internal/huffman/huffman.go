@@ -9,16 +9,14 @@ import (
 	"os"
 )
 
-// Node represents a node in the Huffman tree.
 type Node struct {
-	Char    byte // only for leaves
-	Freq    int  // frequency count
-	MinChar byte // smallest byte value in this subtree, for tie-breaking
+	Char    byte
+	Freq    int
+	MinChar byte
 	Left    *Node
 	Right   *Node
 }
 
-// PriorityQueue implements heap.Interface for []*Node based on Freq and MinChar.
 type PriorityQueue []*Node
 
 func (pq PriorityQueue) Len() int { return len(pq) }
@@ -41,6 +39,7 @@ func (pq *PriorityQueue) Pop() interface{} {
 }
 
 // buildFrequencyTable counts byte frequencies in data.
+// Time Complexity: O(n), Space Complexity: O(1) since max 256 byte values
 func buildFrequencyTable(data []byte) map[byte]int {
 	freq := make(map[byte]int)
 	for _, b := range data {
@@ -50,18 +49,17 @@ func buildFrequencyTable(data []byte) map[byte]int {
 }
 
 // buildHuffmanTree builds a Huffman tree from frequency table deterministically.
+// Time Complexity: O(m log m), Space Complexity: O(m) where m is unique byte count (<= 256)
 func buildHuffmanTree(freq map[byte]int) *Node {
 	if len(freq) == 0 {
 		return nil
 	}
-	// Initialize priority queue
 	pq := &PriorityQueue{}
 	heap.Init(pq)
 	for b, f := range freq {
 		node := &Node{Char: b, Freq: f, MinChar: b}
 		heap.Push(pq, node)
 	}
-	// Merge nodes until one tree remains
 	for pq.Len() > 1 {
 		left := heap.Pop(pq).(*Node)
 		right := heap.Pop(pq).(*Node)
@@ -81,6 +79,7 @@ func buildHuffmanTree(freq map[byte]int) *Node {
 }
 
 // generateCodes populates codeMap with bit-strings for each leaf.
+// Time Complexity: O(m), Space Complexity: O(m)
 func generateCodes(root *Node, prefix string, codeMap map[byte]string) {
 	if root == nil {
 		return
@@ -94,6 +93,7 @@ func generateCodes(root *Node, prefix string, codeMap map[byte]string) {
 }
 
 // encodeDataWithCount encodes data, returns bytes and total bit count.
+// Time Complexity: O(n), Space Complexity: O(n)
 func encodeDataWithCount(data []byte, codeMap map[byte]string) ([]byte, int, error) {
 	var buf bytes.Buffer
 	var bitBuf byte
@@ -121,8 +121,8 @@ func encodeDataWithCount(data []byte, codeMap map[byte]string) ([]byte, int, err
 	return buf.Bytes(), totalBits, nil
 }
 
-// writeHeader serializes frequency table as:
-// [uint16 entries][entry...] each entry: [byte b][uint32 freq]
+// writeHeader serializes frequency table.
+// Time Complexity: O(m), Space Complexity: O(m)
 func writeHeader(freq map[byte]int) ([]byte, error) {
 	var buf bytes.Buffer
 	if err := binary.Write(&buf, binary.LittleEndian, uint16(len(freq))); err != nil {
@@ -138,6 +138,7 @@ func writeHeader(freq map[byte]int) ([]byte, error) {
 }
 
 // HuffmanCompress reads filePath, builds Huffman-coded bytes with header+bitlen.
+// Time Complexity: O(n + m log m), Space Complexity: O(n + m)
 func HuffmanCompress(filePath string) ([]byte, error) {
 	data, err := os.ReadFile(filePath)
 	if err != nil {
@@ -148,20 +149,16 @@ func HuffmanCompress(filePath string) ([]byte, error) {
 	}
 	freqTable := buildFrequencyTable(data)
 	root := buildHuffmanTree(freqTable)
-	// Generate codes
 	codeMap := make(map[byte]string)
 	generateCodes(root, "", codeMap)
-	// Encode data
 	encoded, totalBits, err := encodeDataWithCount(data, codeMap)
 	if err != nil {
 		return nil, err
 	}
-	// Write header
 	head, err := writeHeader(freqTable)
 	if err != nil {
 		return nil, err
 	}
-	// Compose final output
 	var out bytes.Buffer
 	out.Write(head)
 	if err := binary.Write(&out, binary.LittleEndian, uint64(totalBits)); err != nil {
@@ -171,15 +168,14 @@ func HuffmanCompress(filePath string) ([]byte, error) {
 	return out.Bytes(), nil
 }
 
-// HuffmanDecompress reads header+bitlen+data, decodes exact bits.
+// HuffmanDecompress reads header+bitlen+data.
+// Time Complexity: O(n + m log m), Space Complexity: O(n + m)
 func HuffmanDecompress(blob []byte) ([]byte, error) {
 	r := bytes.NewReader(blob)
-	// Read number of entries
 	var numEntries uint16
 	if err := binary.Read(r, binary.LittleEndian, &numEntries); err != nil {
 		return nil, fmt.Errorf("read header entries failed: %v", err)
 	}
-	// Reconstruct freq map
 	freq := make(map[byte]int)
 	for i := 0; i < int(numEntries); i++ {
 		b, err := r.ReadByte()
@@ -192,22 +188,18 @@ func HuffmanDecompress(blob []byte) ([]byte, error) {
 		}
 		freq[b] = int(count)
 	}
-	// Read bit length
 	var totalBits uint64
 	if err := binary.Read(r, binary.LittleEndian, &totalBits); err != nil {
 		return nil, fmt.Errorf("read bit length failed: %v", err)
 	}
-	// Rebuild tree
 	root := buildHuffmanTree(freq)
 	if root == nil {
 		return nil, fmt.Errorf("invalid tree")
 	}
-	// Read encoded bytes
 	bitData, err := io.ReadAll(r)
 	if err != nil {
 		return nil, fmt.Errorf("read encoded data failed: %v", err)
 	}
-	// Decode exact bits
 	var out []byte
 	node := root
 	bitsRead := uint64(0)
